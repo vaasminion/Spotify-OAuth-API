@@ -6,9 +6,6 @@ import time
 from constant import *
 
 app = Flask(__name__)
-app.config['SESSION_COOKIE_NAME'] = 'Spotify Cookie'
-app.secret_key = 'YOUR_SECRET_KEY'
-
 # Create a dictionary to store the code and token
 shared_data = {
     'code': None,
