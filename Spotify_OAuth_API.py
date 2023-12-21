@@ -1,4 +1,4 @@
-from flask import Flask , request ,session,redirect ,jsonify,url_for
+from flask import Flask , request ,jsonify,url_for
 from time import sleep
 from spotipy import SpotifyOAuth ,Spotify
 import requests
@@ -11,7 +11,6 @@ shared_data = {
     'code': None,
     'token': None
 }
-
 @app.route('/clearsession')
 def clearSession():
     shared_data['code'] = None
