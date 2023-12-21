@@ -1,0 +1,28 @@
+name: Deploy Project
+
+on:
+  push:
+    branches: [ main ]
+    paths-ignore:
+      - '.github/workflows/*'
+      
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Get branch name
+        run: |
+          branch_name=${GITHUB_REF##*/}
+      - name: Print Commit hash
+        run : echo ${{ github.sha }}
+      - name: Deploying Project
+        run: echo ${{ github.event.repository.name }}
+      - name : Calling Python script to Trigger deployment
+        run : python .github/workflows/requestApi.py ${{vars.API_URL}} ${{ github.event.repository.name }} "docker-compose" 
+      #- name: Call deployment API
+        #run: curl -L -X POST  "${{vars.API_URL}}" -H "Content-Type:application/json" -d '{"projectName":"${{ github.event.repository.name }}" , "deployMethod":"docker-compose" }'
+
+      - name: Show success message
+        run: echo "Deployment successful!"
