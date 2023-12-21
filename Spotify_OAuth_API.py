@@ -1,42 +1,53 @@
 from flask import Flask , request ,session,redirect ,jsonify,url_for
 from time import sleep
-from spotipy import SpotifyOAuth
+from spotipy import SpotifyOAuth ,Spotify
 import requests
 import time
 from constant import *
+
 app = Flask(__name__)
 app.config['SESSION_COOKIE_NAME'] = 'Spotify Cookie'
 app.secret_key = 'YOUR_SECRET_KEY'
 
+# Create a dictionary to store the code and token
+shared_data = {
+    'code': None,
+    'token': None
+}
+
 @app.route('/clearsession')
 def clearSession():
-    session.clear()
-    return 'Session Cleared'
+    shared_data['code'] = None
+    shared_data['token'] = None
+    return 'Code and Token Cleared'
 
 @app.route('/redirect')
 def redirectUrl():
     try:
-        code = request.args.get('code',None)
+        code = request.args.get('code', None)
         if code is None:
             return 'No Changes'
         if code == '':
             return 'Code is Empty'
-        session['code'] = code
-        return str(session.get('code'))
+        shared_data['code'] = code
+        return str(shared_data['code'])
     except Exception as ex:
         return str(ex)
-    
+
 def sendDiscordAuthMessage():
     print('Sending Auth URL to Discord')
     content = 'Spotify Account OAuth'
     content = 'Visit URL : ' + str(SpotOAuth().get_authorize_url())
-    data = {"username": "Spotify Bot","embeds": [
-                {
-                    "description": content,"title": ""
-                }
-                ]
+    data = {
+        "username": "Spotify Bot",
+        "embeds": [
+            {
+                "description": content,
+                "title": ""
             }
-    result = requests.post(DISCORD_WEBHOOK_URL, json = data)
+        ]
+    }
+    result = requests.post(DISCORD_WEBHOOK_URL, json=data)
     try:
         result.raise_for_status()
     except requests.exceptions.HTTPError as err:
@@ -49,29 +60,21 @@ def createToken():
     try:
         result = {
             'status': False,
-            'error' : '',
-
+            'error': '',
         }
         sendDiscordAuthMessage()
-        #sleep(40)
-        print('Checking if Auth got success')
+
+        # Sleep and wait for the code to be set in the shared data
         timeout = 60
         starttime = time.time()
-        code = None
-        while True:
-            code = session.get('code',None)
-            print('code ' + str(code))
-            if code is not None:
-                print('Found Code')
-                break
-            
+        while shared_data['code'] is None:
             if timeout <= time.time() - starttime:
                 print('Code not found. Hence Unable to create new Token')
                 result['error'] = 'Not Able to find Code'
                 return result
             sleep(1)
-        
-        session['token'] = SpotOAuth().get_access_token(code)
+
+        shared_data['token'] = SpotOAuth().get_access_token(shared_data['code'])
         result['status'] = True
         return result
 
@@ -81,38 +84,39 @@ def createToken():
 
 @app.route('/gettoken')
 def getToken():
-    Token = session.get('token',None)
+    Token = shared_data.get('token', None)
     if Token is not None:
         print('Token is Available')
         now = int(time.time())
         is_expired = Token['expires_at'] - now < 60
-        if(is_expired):
+        if is_expired:
             print('Token Expired. Hence Refreshing the Token')
             Token = SpotOAuth().refresh_access_token(Token['refresh_token'])
-        
         return jsonify(Token)
-    
     else:
         print('Token Not Available')
         result = createToken()
-        if result['status'] :
-            Token = session.get('token',None)
+        if result['status']:
+            Token = shared_data.get('token', None)
             if Token is None:
                 Token = {}
                 Token['status'] = 400
                 Token['error'] = 'Unable to Create Token'
-                return Token
-            
+                return jsonify(Token)
             Token['status'] = 200
             return jsonify(Token)
-        
         else:
             Token = {}
             Token['status'] = 400
             Token['error'] = result['error']
-            return Token
+            return jsonify(Token)
 
 def SpotOAuth():
-    return SpotifyOAuth(client_id=CLIENT_ID, client_secret=CLIENT_SECRET,redirect_uri=url_for('redirectUrl',_external = True), scope=SCOPE)
+    return SpotifyOAuth(client_id=CLIENT_ID, client_secret=CLIENT_SECRET,
+                        redirect_uri=url_for('redirectUrl', _external=True), scope=SCOPE)
+@app.route('/')
+def index():
+    return str(shared_data.get('token','Nothing')) + '   :   ' + str(SpotOAuth().get_authorize_url()) + '   ::::::: ' + str(shared_data.get('code','codeNothing'))
+
 if __name__ == '__main__':
-    app.run(host = '0.0.0.0',threaded = True)
+    app.run(host='0.0.0.0', threaded=True)
