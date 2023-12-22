@@ -16,7 +16,6 @@ def clearSession():
     shared_data['code'] = None
     shared_data['token'] = None
     return 'Code and Token Cleared'
-
 @app.route('/redirect')
 def redirectUrl():
     try:
