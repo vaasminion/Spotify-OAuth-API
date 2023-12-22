@@ -5,6 +5,7 @@ import requests
 import time
 from constant import *
 
+
 app = Flask(__name__)
 # Create a dictionary to store the code and token
 shared_data = {
