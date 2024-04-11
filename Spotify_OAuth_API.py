@@ -1,22 +1,26 @@
-from flask import Flask , request ,jsonify,url_for
+from flask import Flask , request ,session,redirect ,jsonify,url_for
 from time import sleep
-from spotipy import SpotifyOAuth ,Spotify
+from spotipy import SpotifyOAuth
 import requests
 import time
 from constant import *
 
-
 app = Flask(__name__)
+app.config['SESSION_COOKIE_NAME'] = 'Spotify Cookie'
+app.secret_key = 'YOUR_SECRET_KEY'
+
 # Create a dictionary to store the code and token
 shared_data = {
     'code': None,
     'token': None
 }
+
 @app.route('/clearsession')
 def clearSession():
     shared_data['code'] = None
     shared_data['token'] = None
     return 'Code and Token Cleared'
+
 @app.route('/redirect')
 def redirectUrl():
     try:
