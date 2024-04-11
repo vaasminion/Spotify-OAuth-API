@@ -1,6 +1,6 @@
 from flask import Flask , request ,session,redirect ,jsonify,url_for
 from time import sleep
-from spotipy import SpotifyOAuth
+from spotipy import SpotifyOAuth ,Spotify
 import requests
 import time
 from constant import *
@@ -14,6 +14,11 @@ shared_data = {
     'code': None,
     'token': None
 }
+@app.route('/test')
+def test():
+	token = shared_data.get('token',None)
+	sp = Spotify(auth = token['access_token'])
+	print(sp.current_user_recently_played())
 
 @app.route('/clearsession')
 def clearSession():
